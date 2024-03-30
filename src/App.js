@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as math from "mathjs";
 
 //******************************/
@@ -18,6 +18,37 @@ function Calculator() {
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
 
+  const addToText = useCallback(
+    (val) => {
+      // Prevent multiple decimal points and allow consecutive decimal points in expressions like "35.2 + 43.2"
+      if (val === "." && (text === "" || text[text.length - 1] === ".")) return;
+
+      setText((prevText) => prevText + val);
+    },
+    [text]
+  );
+
+  const delNumber = useCallback(() => {
+    setText((prevText) => {
+      if (prevText === "") return prevText;
+      return prevText.slice(0, -1);
+    });
+  }, []);
+
+  const calculateResult = useCallback(() => {
+    try {
+      const input = text;
+
+      if (!/\d$/.test(input)) {
+        throw new Error("Invalid input! Last character must be a number.");
+      }
+
+      setResult(math.evaluate(input));
+    } catch (error) {
+      alert(error.message);
+    }
+  }, [text]);
+
   useEffect(() => {
     const handleKeyPress = (event) => {
       const keyPressed = event.key;
@@ -35,35 +66,7 @@ function Calculator() {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [text]); //Only when text state change useEffect will work
-
-  function addToText(val) {
-    // Prevent multiple decimal points and allow consecutive decimal points in expressions like "35.2 + 43.2"
-    if (val === "." && (text === "" || text[text.length - 1] === ".")) return;
-
-    setText((prevText) => prevText + val);
-  }
-
-  function delNumber() {
-    setText((prevText) => {
-      if (prevText === "") return prevText;
-      return prevText.slice(0, -1);
-    });
-  }
-
-  function calculateResult() {
-    try {
-      const input = text;
-
-      if (!/\d$/.test(input)) {
-        throw new Error("Invalid input! Last character must be a number.");
-      }
-
-      setResult(math.evaluate(input));
-    } catch (error) {
-      alert(error.message);
-    }
-  }
+  }, [text, addToText, calculateResult, delNumber]); //Only when text state change useEffect will work
 
   // Pow
   function powNumber() {
